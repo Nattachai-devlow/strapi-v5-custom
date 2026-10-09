@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "students",
+  "info": {
+    "singularName": "student",
+    "pluralName": "students",
+    "displayName": "Student"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "studentID": {
+      "type": "uid",
+      "required": true,
+      "default": "05686040XXXXX",
+      "minLength": 13,
+      "maxLength": 13
+    },
+    "name": {
+      "type": "text",
+      "default": "Your Name",
+      "required": true
+    },
+    "phone": {
+      "type": "text",
+      "default": "099-xxx-xxxx",
+      "maxLength": 10,
+      "required": true
+    }
+  }
+}

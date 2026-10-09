@@ -1,20 +1,20 @@
-// import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi';
+import { createSecureLifecycle } from './utils/secureFields';
 
 export default {
-  /**
-   * An asynchronous register function that runs before
-   * your application is initialized.
-   *
-   * This gives you an opportunity to extend code.
-   */
-  register(/* { strapi }: { strapi: Core.Strapi } */) {},
+  register() {},
 
   /**
-   * An asynchronous bootstrap function that runs before
-   * your application gets started.
-   *
-   * This gives you an opportunity to set up your data model,
-   * run jobs, or perform some special logic.
+   * Bootstrap runs before the application starts.
+   * Here we subscribe secure-field lifecycles for the Users & Permissions
+   * plugin so sensitive columns (email, username) are base64-encoded in DB,
+   * while decoded plane-text views are served to the application.
    */
-  bootstrap(/* { strapi }: { strapi: Core.Strapi } */) {},
+  bootstrap({ strapi }: { strapi: Core.Strapi }) {
+    const userLifecycle = createSecureLifecycle('plugin::users-permissions.user', ['email', 'username']);
+    (strapi.db as any).lifecycles.subscribe({
+      models: ['plugin::users-permissions.user'],
+      ...userLifecycle,
+    });
+  },
 };

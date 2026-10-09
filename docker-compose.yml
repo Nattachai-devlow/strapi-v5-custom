@@ -1,0 +1,76 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-strapi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-strapi}
+      POSTGRES_DB: ${POSTGRES_DB:-strapi}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      # 5433 to avoid clashing with a local PostgreSQL on the host
+      - "${POSTGRES_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-strapi} -d $${POSTGRES_DB:-strapi}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # pgAdmin 4 - start with: docker compose --profile tools up -d
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    profiles: ["tools"]
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  strapi:
+    image: nattachai-devlow/strapi-v5:latest
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${PORT:-1337}:1337"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 1337
+      NODE_ENV: production
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: db
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: ${POSTGRES_DB:-strapi}
+      DATABASE_USERNAME: ${POSTGRES_USER:-strapi}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-strapi}
+      DATABASE_SSL: ${DATABASE_SSL:-false}
+      # Override these via a .env file next to docker-compose.yml before production use
+      APP_KEYS: ${APP_KEYS:-7b369f52a11e87111d97d7a496fe1574dabc029cc687b6be9428a2e13a936914,42724bc8abc8357474b6930bcbb9221b73c62c2424fdf36d93de3d3e57d7c8ae}
+      API_TOKEN_SALT: ${API_TOKEN_SALT:-5f5d7916a2e1c34ccba4e456213ea44828492b285f3939b8788004e12d031522}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:-489cf9330327826cfcb427de773876ccd7d35d9315cc2bfd5ea9ae36d7235056}
+      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT:-e743ea6128afe26baf8174c56c3799ba39f639c3403b005e88bca5940070e510}
+      JWT_SECRET: ${JWT_SECRET:-571703cb25fcad264e541785424166ae0ce00dc95ebacbd362f8bba17a4218a8}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-204041a09f0d5069fd59e28cf669ee306cf0dd36c720b4643179ac521a4f959c}
+    volumes:
+      - uploads:/opt/app/public/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:1337/admin/init || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+volumes:
+  pgdata:
+  pgadmin-data:
+  uploads:

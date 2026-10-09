@@ -1,0 +1,26 @@
+{
+  "kind": "collectionType",
+  "collectionName": "teachers",
+  "info": {
+    "singularName": "teacher",
+    "pluralName": "teachers",
+    "displayName": "Teacher"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "phone": {
+      "type": "text",
+      "default": "Your Phone Number",
+      "maxLength": 10,
+      "required": true
+    },
+    "name": {
+      "type": "text",
+      "default": "Your Name",
+      "required": true
+    }
+  }
+}

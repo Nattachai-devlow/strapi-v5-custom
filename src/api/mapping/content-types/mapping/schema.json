@@ -1,0 +1,29 @@
+{
+  "kind": "singleType",
+  "collectionName": "mappings",
+  "info": {
+    "singularName": "mapping",
+    "pluralName": "mappings",
+    "displayName": "Mapping"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "subject": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::subject.subject"
+    },
+    "teacher": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::teacher.teacher"
+    },
+    "semester": {
+      "type": "text",
+      "required": true
+    }
+  }
+}

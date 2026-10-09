@@ -1,0 +1,15 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "strapi-postgres",
+      "Group": "Servers",
+      "Host": "db",
+      "Port": 5432,
+      "MaintenanceDB": "strapi",
+      "Username": "strapi",
+      "Password": "strapi",
+      "SSLMode": "prefer",
+      "SavePassword": true
+    }
+  }
+}

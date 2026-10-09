@@ -1,0 +1,26 @@
+{
+  "kind": "collectionType",
+  "collectionName": "subjects",
+  "info": {
+    "singularName": "subject",
+    "pluralName": "subjects",
+    "displayName": "Subject"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "subjectID": {
+      "type": "text",
+      "default": "EN2000000-XX",
+      "maxLength": 12,
+      "required": true
+    },
+    "name": {
+      "type": "text",
+      "default": "Subject Name",
+      "required": true
+    }
+  }
+}
