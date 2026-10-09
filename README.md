@@ -80,25 +80,25 @@ docker run -d --name strapi -p 1337:1337 \
   -e TRANSFER_TOKEN_SALT=change-me \
   -e ENCRYPTION_KEY=change-me \
   -v strapi-uploads:/opt/app/public/uploads \
-  nattachai-devlow/strapi-v5:latest
+  nattachaiwsm/strapi-v5:latest
 ```
 
 ### Build the image yourself
 
 ```bash
-docker build -t nattachai-devlow/strapi-v5:latest .
+docker build -t nattachaiwsm/strapi-v5:latest .
 ```
 
 ### Take the image and continue development
 
 The image is published on Docker Hub as
-[`nattachai-devlow/strapi-v5`](https://hub.docker.com/r/nattachai-devlow/strapi-v5).
+[`nattachaiwsm/strapi-v5`](https://hub.docker.com/r/nattachaiwsm/strapi-v5).
 You can pick it up and keep building on top of it in any of the following ways.
 
 **1. Run the prebuilt image (no source code required)**
 
 ```bash
-docker pull nattachai-devlow/strapi-v5:latest
+docker pull nattachaiwsm/strapi-v5:latest
 
 docker run -d --name strapi -p 1337:1337 \
   -e DATABASE_CLIENT=postgres \
@@ -114,7 +114,7 @@ docker run -d --name strapi -p 1337:1337 \
   -e TRANSFER_TOKEN_SALT=change-me \
   -e ENCRYPTION_KEY=change-me \
   -v strapi-uploads:/opt/app/public/uploads \
-  nattachai-devlow/strapi-v5:latest
+  nattachaiwsm/strapi-v5:latest
 ```
 
 **2. Extend the image in a new project (recommended)**
@@ -123,7 +123,7 @@ Create a `Dockerfile` in your own project and build on top of the published imag
 then copy in your additional content-types, plugins or code:
 
 ```dockerfile
-FROM nattachai-devlow/strapi-v5:latest
+FROM nattachaiwsm/strapi-v5:latest
 COPY --chown=node:node ./src ./src
 COPY --chown=node:node ./config ./config
 RUN npm run build
@@ -149,8 +149,8 @@ types are regenerated — no manual migration is needed. When your changes are
 ready, rebuild and re-publish the image:
 
 ```bash
-docker build -t nattachai-devlow/strapi-v5:latest .
-docker push nattachai-devlow/strapi-v5:latest
+docker build -t nattachaiwsm/strapi-v5:latest .
+docker push nattachaiwsm/strapi-v5:latest
 ```
 
 ## 📚 Learn more

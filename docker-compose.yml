@@ -35,7 +35,7 @@ services:
         condition: service_healthy
 
   strapi:
-    image: nattachai-devlow/strapi-v5:latest
+    image: nattachaiwsm/strapi-v5:latest
     build: .
     restart: unless-stopped
     depends_on:
