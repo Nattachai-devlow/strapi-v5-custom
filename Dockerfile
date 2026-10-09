@@ -16,7 +16,9 @@ LABEL org.opencontainers.image.title="strapi-v5-custom" \
 # `node` service account (fixed UID/GID 1000) which keeps existing volumes and
 # downstream builds that use `--chown=node:node` working. tini gives us a real
 # init (PID 1) that reaps zombies and forwards signals.
-RUN apk add --no-cache tini
+# IAAA / Accountability: keep OS packages current within the pinned Alpine release
+# (patches e.g. CVE-2026-... in zlib) while retaining digest-based reproducibility.
+RUN apk add --no-cache tini && apk upgrade --no-cache
 
 ENV NODE_ENV=production \
     NPM_CONFIG_UPDATE_NOTIFIER=false \
@@ -69,6 +71,11 @@ COPY --from=build --chown=node:node /opt/app/tsconfig.json ./tsconfig.json
 RUN mkdir -p .tmp database/migrations public/uploads \
     && chown node:node /opt/app package.json package-lock.json .tmp database database/migrations public public/uploads \
     && chmod 750 /opt/app
+
+# IAAA / least privilege: drop the bundled npm client and its whole dependency tree
+# (pacote, sigstore, ip-address, http-cache-semantics, ...) from the runtime image.
+# `strapi start` never spawns npm, so removing it eliminates an unused SBOM surface.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
 USER node
 EXPOSE 1337

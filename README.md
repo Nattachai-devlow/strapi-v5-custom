@@ -208,6 +208,31 @@ maps to a concrete attack it stops.
   `npm run develop` with the `DATABASE_*` values from `.env`. The Docker image
   is the production-hardened runtime.
 
+### Reducing the reported CVE surface
+
+The image is scanned with `docker scout cves`. Current state: **66 findings in 6
+packages** (4 critical / 30 high / 27 medium / 2 low / 3 unspecified). The
+critical and high findings are limited to **2 packages with no upstream fix**:
+
+| Package | Severity | Why it is accepted |
+| --- | --- | --- |
+| `stdlib` 1.23.x (Go) via `esbuild` | 4 critical, 29 high | bundled inside the `esbuild` binary that Strapi's CLI (`esbuild-register` → `@strapi/strapi`) loads at every `strapi start`; there is no newer `esbuild` release and the binary ships the Go 1.23 runtime. Not network-serving, not user-reachable. Re-evaluate when `esbuild` rebuilds with a newer Go toolchain. |
+| `braces` 3.0.3 (uncontrolled recursion) | 1 high | latest published version; keep-watching GitHub advisory `GHSA-vfj7-8cjw-p6xm` (CVE-2026-93687), no fixed release yet. |
+
+Everything else in the list was cleared at build time rather than deferred:
+
+- **`npm overrides`** in `package.json` raise transitive packages to patched
+  releases: `axios 1.20.0`, `handlebars 4.7.10`, `nodemailer 10.0.16`,
+  `sharp 0.35.5`, `webpack-dev-middleware 7.4.6`, `dompurify 3.4.16`.
+- **npm + its dependency tree removed from the runtime image** (`pacote`,
+  `sigstore`, `ip-address`, `http-cache-semantics`, ...), because `strapi start`
+  never spawns npm.
+- **`apk upgrade`** in the base stage patches Alpine packages (e.g. `zlib`) while
+  staying on the digest-pinned distribution.
+
+To re-evaluate: `docker scout cves nattachaiwsm/strapi-v5:latest` and check for
+new releases of `esbuild` / `braces`.
+
 ## 📚 Learn more
 
 - [Resource center](https://strapi.io/resource-center) - Strapi resource center.
