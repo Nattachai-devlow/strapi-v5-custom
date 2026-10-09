@@ -44,14 +44,19 @@ yarn strapi deploy
 
 ### Quick start (Strapi + PostgreSQL in one command)
 
+The stack has **no default secrets**: it refuses to start until real values are
+provided. Copy the example file and fill in strong, unique values first.
+
 ```bash
+cp .env.example .env
+# then edit .env and replace every "tobemodified" value, e.g. with `openssl rand -base64 32`
 docker compose up -d
 ```
 
 - Admin panel: http://localhost:1337/admin
 - PostgreSQL runs inside the compose network (data persisted in the `pgdata` volume)
 
-Optionally start pgAdmin 4 (http://localhost:5050, login `admin@admin.com` / `admin`) together with the stack — the database server is pre-registered:
+Optionally start pgAdmin 4 (http://localhost:5050, login with `PGADMIN_EMAIL` / `PGADMIN_PASSWORD` from `.env`, which defaults to your database password) together with the stack — the database server is pre-registered:
 
 ```bash
 docker compose --profile tools up -d
@@ -152,6 +157,56 @@ ready, rebuild and re-publish the image:
 docker build -t nattachaiwsm/strapi-v5:latest .
 docker push nattachaiwsm/strapi-v5:latest
 ```
+
+## 🛡️ Security model (IAAA)
+
+The image implements the **IAAA** model — *Identification, Authentication,
+Authorization, Accountability* — to close the most common container
+vulnerability classes without giving up usability or extensibility. Every
+control below is on by default when you use `docker compose`, and each one
+maps to a concrete attack it stops.
+
+| Principle | Control | Attack it stops | Where |
+| --- | --- | --- | --- |
+| **Identification** | Runs only as the non-root `node` service account (fixed UID/GID `1000`, `USER node`); no root shell, no ad-hoc accounts. | Container breakout running as `root` (UID 0), identity drift between hosts | `Dockerfile` |
+| | OCI provenance labels (`title`, `version`, `revision`, `base.name`) plus `VERSION` / `VCS_REF` build args bake *what was built, when, and from what* into the image. | Impostor / untracked images | `Dockerfile`, `docker-compose.yml` |
+| **Authentication** | No secrets baked into the image. Compose **fails fast** unless `APP_KEYS`, `API_TOKEN_SALT`, `ADMIN_JWT_SECRET`, `JWT_SECRET`, `TRANSFER_TOKEN_SALT`, `ENCRYPTION_KEY` and `POSTGRES_*` are supplied. | Default-credential takeover, secrets leaked into published layers | `docker-compose.yml`, `.env.example` |
+| | Base image pinned by **tag + digest**; dependencies installed from the committed `package-lock.json` via `npm ci`. | Swapped/moved base tags, tampered dependencies | `Dockerfile` |
+| **Authorization** | Least privilege: non-root user, `cap_drop: [ALL]`, `security_opt: no-new-privileges`, read-only root filesystem with `tmpfs` only for the writable scratch (`/opt/app/.tmp`, `/tmp`); production-only `node_modules`; DB and pgAdmin bound to loopback. | Kernel-capability abuse, privilege escalation, payload write, lateral DB exposure | `Dockerfile`, `docker-compose.yml` |
+| | `.dockerignore` keeps `.env`, git metadata, tests, docs and local tool state out of the build context. | Secret / SSH-key leakage into image layers | `.dockerignore` |
+| **Accountability** | `tini` as PID 1 — reaps orphans and forwards signals for graceful shutdown; built-in `HEALTHCHECK`; `json-file` log rotation (10 MB × 3); named volumes so data outlives containers. | Zombie accumulation, ungraceful stops, unbounded logs, silent death | `Dockerfile`, `docker-compose.yml` |
+| | `HOME` and `XDG_*` point at `/tmp` so the process never writes into the read-only FS or tries to create `/home`. | Runtime "read-only filesystem" crashes | `Dockerfile` |
+
+### Operational notes
+
+- **Startup fails if secrets are missing.** Run `cp .env.example .env`, replace
+  every `tobemodified` value (e.g. `openssl rand -base64 32`), then
+  `docker compose up -d`. No container is ever exposed with a known default
+  password.
+- **Read-only root filesystem.** Strapi can only write to the `uploads` volume
+  and to the `tmpfs` mounts `/opt/app/.tmp` and `/tmp`. If you add a feature
+  that writes elsewhere, add another volume or `tmpfs` mount in
+  `docker-compose.yml` — don't disable `read_only`.
+- **Identity is UID 1000.** Data volumes are created with UID/GID 1000
+  ownership, matching the `node` account. Keep the container user at 1000 (the
+  default) so existing volumes keep working; if you change the UID you must
+  re-chown your volumes, e.g.
+  `docker run --rm -v uploads:/data alpine chown -R 1000:1000 /data`.
+- **Extending the image** (see above) — copy your code with
+  `--chown=node:node` so the non-root runtime can read it.
+- **Keep the base up to date.** When you bump the Node base image, update both
+  the tag and its digest in `Dockerfile`:
+  ```bash
+  docker manifest inspect node:22-alpine --verbose   # grab the new sha256 digest
+  ```
+- **Scan the result** before publishing:
+  ```bash
+  docker scout cves nattachaiwsm/strapi-v5:latest
+  # or: trivy image --severity HIGH,CRITICAL nattachaiwsm/strapi-v5:latest
+  ```
+- **Local development** is intentionally not containerized: use
+  `npm run develop` with the `DATABASE_*` values from `.env`. The Docker image
+  is the production-hardened runtime.
 
 ## 📚 Learn more
 

@@ -4,25 +4,52 @@ build
 coverage
 logs
 *.log
+npm-debug.log*
+yarn-error.log*
+*.tsbuildinfo
 
+# Never ship local secrets or environment files.
 .env
 .env.*
 !.env.example
 
+# Version control / CI metadata.
 .git
 .gitignore
 .github
 
+# Editor / OS noise.
+.vscode
+.idea
+.editorconfig
+.DS_Store
+Thumbs.db
+
+# Local tooling state.
 .tmp
 .cache
 .strapi-updater.json
 .strapi-cloud.json
 
+# Persisted runtime data (kept out of the image, mounted as volumes instead).
 public/uploads/*
 !public/uploads/.gitkeep
 data/uploads
+database/*.db
+*.sqlite
 
+# Local dev-only database admin tool.
+pgadmin
+
+# Tests and docs are not needed at runtime.
+**/*.test.ts
+**/*.spec.ts
+**/__tests__/**
+test
+tests
+**/*.md
+
+# Build/deploy files.
 Dockerfile
 docker-compose.yml
 .dockerignore
-README.md
